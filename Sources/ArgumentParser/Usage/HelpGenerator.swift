@@ -141,7 +141,7 @@ internal struct HelpGenerator {
     }
     
     self.usage = Usage(components: [usageString])
-    self.sections = HelpGenerator.generateSections(commandStack: commandStack)
+    self.sections = HelpGenerator.generateSections(commandStack: self.commandStack)
     self.discussionSections = []
   }
   
