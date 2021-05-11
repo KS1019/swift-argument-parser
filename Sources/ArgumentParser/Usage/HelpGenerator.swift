@@ -116,7 +116,17 @@ internal struct HelpGenerator {
       toolName = "\(superName) \(toolName)"
     }
 
-    var usageString = UsageGenerator(toolName: toolName, definition: [currentArgSet]).synopsis
+    var usageString: String = ""
+    if let defaultSubcommand = currentCommand.configuration.defaultSubcommand {
+      let string = UsageGenerator(toolName: toolName, definition: [ArgumentSet(defaultSubcommand)]).synopsisWithoutToolName
+
+      usageString = toolName + " " + string
+      usageString += "\n"
+      
+      self.commandStack.append(defaultSubcommand)
+    }
+    
+    usageString += UsageGenerator(toolName: toolName, definition: [currentArgSet]).synopsis
     if !currentCommand.configuration.subcommands.isEmpty {
       if usageString.last != " " { usageString += " " }
       usageString += "<subcommand>"

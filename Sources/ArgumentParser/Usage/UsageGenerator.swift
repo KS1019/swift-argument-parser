@@ -57,6 +57,29 @@ extension UsageGenerator {
       return "\(toolName) \(definition.synopsis.joined(separator: " "))"
     }
   }
+  
+  var synopsisWithoutToolName: String {
+    let definitionSynopsis = definition.synopsis
+    switch definitionSynopsis.count {
+    case 0:
+      return ""
+    case let x where x > 12:
+      // When we have too many options, keep required and positional arguments,
+      // but discard the rest.
+      let synopsis: [String] = definition.compactMap { argument in
+        guard argument.isPositional || !argument.help.options.contains(.isOptional) else {
+          return nil
+        }
+        return argument.synopsis
+      }
+      if !synopsis.isEmpty, synopsis.count <= 12 {
+        return "[<options>] \(synopsis.joined(separator: " "))"
+      }
+      return "<options>"
+    default:
+      return "\(definition.synopsis.joined(separator: " "))"
+    }
+  }
 }
 
 extension ArgumentSet {
