@@ -23,12 +23,18 @@ final class MathExampleTests: XCTestCase {
     let helpText = """
         OVERVIEW: A utility for performing maths.
 
-        USAGE: math <subcommand>
-
+        USAGE:
+          math [--hex-output] [<values> ...]
+          math <subcommand>
+        
+        ARGUMENTS:
+          <values>                A group of integers to operate on.
+        
         OPTIONS:
+          -x, --hex-output        Use hexadecimal notation for the result.
           --version               Show the version.
           -h, --help              Show help information.
-
+        
         SUBCOMMANDS:
           add (default)           Print the sum of the values.
           multiply                Print the product of the values.

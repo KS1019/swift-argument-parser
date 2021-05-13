@@ -117,6 +117,7 @@ internal struct HelpGenerator {
     }
 
     var usageString: String = ""
+    var modifiedCommandStack = self.commandStack
     if let defaultSubcommand = currentCommand.configuration.defaultSubcommand {
       // now defaultSubcommandTracker is at the deepest of the tree
       let string = UsageGenerator(toolName: toolName, definition: [ArgumentSet(defaultSubcommand)]).synopsisWithoutToolName
@@ -124,7 +125,7 @@ internal struct HelpGenerator {
         usageString = "\n" +  String(repeating: " ", count: HelpGenerator.helpIndent)  + toolName + " " + string
         usageString += "\n" + String(repeating: " ", count: HelpGenerator.helpIndent)
       }
-      self.commandStack.append(defaultSubcommand)
+      modifiedCommandStack.append(defaultSubcommand)
     }
     
     usageString += UsageGenerator(toolName: toolName, definition: [currentArgSet]).synopsis
@@ -142,12 +143,17 @@ internal struct HelpGenerator {
     }
     
     self.usage = Usage(components: [usageString])
-    self.sections = HelpGenerator.generateSections(commandStack: self.commandStack)
-    let subcommandSections = HelpGenerator.generateSections(commandStack: commandStack)
-      .filter { section in
-        section.header == .subcommands
-      }
-    self.sections.append(contentsOf: subcommandSections)
+    self.sections = HelpGenerator.generateSections(commandStack: modifiedCommandStack)
+    if currentCommand.configuration.defaultSubcommand != nil {
+      let subcommandSections = HelpGenerator.generateSections(commandStack: commandStack)
+        .filter { section in
+          section.header == .subcommands
+        }
+        .map { $0.elements }.joined()
+      let sectionsSubcommands = self.sections.filter { $0.header == .subcommands }.map { $0.elements }.joined()
+      self.sections.removeAll { $0.header == .subcommands }
+      self.sections.append(Section(header: .subcommands, elements: Array(subcommandSections) + Array(sectionsSubcommands)))
+    }
     self.discussionSections = []
   }
   
