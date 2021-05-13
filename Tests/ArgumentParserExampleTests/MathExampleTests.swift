@@ -34,7 +34,7 @@ final class MathExampleTests: XCTestCase {
           -x, --hex-output        Use hexadecimal notation for the result.
           --version               Show the version.
           -h, --help              Show help information.
-        
+
         SUBCOMMANDS:
           add (default)           Print the sum of the values.
           multiply                Print the product of the values.
