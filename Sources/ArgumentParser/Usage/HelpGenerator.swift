@@ -121,12 +121,12 @@ internal struct HelpGenerator {
       let string = UsageGenerator(toolName: toolName, definition: [ArgumentSet(defaultSubcommand)]).synopsisWithoutToolName
 
       usageString = "\n" +  String(repeating: " ", count: HelpGenerator.helpIndent)  + toolName + " " + string
-      usageString += "\n"
+      usageString += "\n" + String(repeating: " ", count: HelpGenerator.helpIndent)
       
       self.commandStack.append(defaultSubcommand)
     }
     
-    usageString += String(repeating: " ", count: HelpGenerator.helpIndent) + UsageGenerator(toolName: toolName, definition: [currentArgSet]).synopsis
+    usageString += UsageGenerator(toolName: toolName, definition: [currentArgSet]).synopsis
     if !currentCommand.configuration.subcommands.isEmpty {
       if usageString.last != " " { usageString += " " }
       usageString += "<subcommand>"
