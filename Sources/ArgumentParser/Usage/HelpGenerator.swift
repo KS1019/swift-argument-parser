@@ -126,24 +126,6 @@ internal struct HelpGenerator {
       }
       self.commandStack.append(defaultSubcommand)
     }
-    // Search for the default command
-//    if let defaultSubcommand = currentCommand.configuration.defaultSubcommand {
-//      var defaultSubcommandTracker: ParsableCommand.Type? = defaultSubcommand
-//      while(defaultSubcommandTracker != nil) {
-//        if let d = defaultSubcommandTracker?.configuration.defaultSubcommand {
-//          defaultSubcommandTracker = d
-//        } else {
-//          // now defaultSubcommandTracker is at the deepest of the tree
-//          let string = UsageGenerator(toolName: toolName, definition: [ArgumentSet(defaultSubcommandTracker!)]).synopsisWithoutToolName
-//
-//          usageString = "\n" +  String(repeating: " ", count: HelpGenerator.helpIndent)  + toolName + " " + string
-//          usageString += "\n" + String(repeating: " ", count: HelpGenerator.helpIndent)
-//
-//          self.commandStack.append(defaultSubcommandTracker!)
-//          break
-//        }
-//      }
-//    }
     
     usageString += UsageGenerator(toolName: toolName, definition: [currentArgSet]).synopsis
     if !currentCommand.configuration.subcommands.isEmpty {
@@ -161,6 +143,11 @@ internal struct HelpGenerator {
     
     self.usage = Usage(components: [usageString])
     self.sections = HelpGenerator.generateSections(commandStack: self.commandStack)
+    let subcommandSections = HelpGenerator.generateSections(commandStack: commandStack)
+      .filter { section in
+        section.header == .subcommands
+      }
+    self.sections.append(contentsOf: subcommandSections)
     self.discussionSections = []
   }
   
