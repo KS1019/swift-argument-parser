@@ -122,8 +122,8 @@ internal struct HelpGenerator {
       let string = UsageGenerator(toolName: toolName, definition: [ArgumentSet(defaultSubcommand)]).synopsisWithoutToolName
       if string.count > 0 {
         usageString = "\n" +  String(repeating: " ", count: HelpGenerator.helpIndent)  + toolName + " " + string
+        usageString += "\n" + String(repeating: " ", count: HelpGenerator.helpIndent)
       }
-      usageString += "\n" + String(repeating: " ", count: HelpGenerator.helpIndent)
       self.commandStack.append(defaultSubcommand)
     }
     // Search for the default command
