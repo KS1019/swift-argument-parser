@@ -121,7 +121,7 @@ internal struct HelpGenerator {
     // Search for the default command
     if let defaultSubcommand = currentCommand.configuration.defaultSubcommand {
       var defaultSubcommandTracker: ParsableCommand.Type? = defaultSubcommand
-      while(defaultSubcommandTracker?.configuration.defaultSubcommand != nil) {
+      while(defaultSubcommandTracker != nil) {
         if let d = defaultSubcommandTracker?.configuration.defaultSubcommand {
           defaultSubcommandTracker = d
         } else {
@@ -132,6 +132,7 @@ internal struct HelpGenerator {
           usageString += "\n" + String(repeating: " ", count: HelpGenerator.helpIndent)
           
           self.commandStack.append(defaultSubcommandTracker!)
+          break
         }
       }
     }
