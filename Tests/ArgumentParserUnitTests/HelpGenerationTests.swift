@@ -552,6 +552,12 @@ extension HelpGenerationTests {
       subcommands: [Sub.self],
       defaultSubcommand: Sub.self)
     
+    @Argument(help: "Required argument")
+    var requiredArgument: String
+    
+    @Argument(help: "Non-required argument")
+    var nonRequiredArgument: String?
+    
     struct Sub: ParsableCommand {
       static let configuration = CommandConfiguration(
         commandName: "sub",
@@ -581,7 +587,7 @@ extension HelpGenerationTests {
     AssertHelp(for: SuperCommand.self, equals: """
       USAGE:
         super <required-argument-sub> [<non-required-argument-sub>]
-        super <subcommand>
+        super <required-argument> [<non-required-argument>] <subcommand>
 
       ARGUMENTS:
         <required-argument-sub> Required argument
