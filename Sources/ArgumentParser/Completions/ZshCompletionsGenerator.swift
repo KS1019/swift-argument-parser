@@ -36,7 +36,7 @@ struct ZshCompletionsGenerator {
     let isRootCommand = commands.count == 1
     
     var args = generateCompletionArguments(commands)
-    args.append("'(-h --help)'{-h,--help}'[Print help information.]'")
+    args.append("'(--dump-help)'{--dump-help}'[Dump help information.]'")
     
     var subcommands = type.configuration.subcommands
     var subcommandHandler = ""
@@ -105,8 +105,7 @@ struct ZshCompletionsGenerator {
   }
 
   static func generateCompletionArguments(_ commands: [ParsableCommand.Type]) -> [String] {
-    ArgumentSet(commands.last!)
-      .compactMap { $0.zshCompletionString(commands) }
+    commands.argumentsForHelp().compactMap { $0.zshCompletionString(commands) }
   }
 }
 
@@ -130,15 +129,12 @@ extension String {
 
 extension ArgumentDefinition {
   var zshCompletionAbstract: String {
-    guard
-        let abstract = help.help?.abstract,
-        !abstract.isEmpty
-        else { return "" }
-    return "[\(abstract.zshEscaped())]"
+    guard !help.abstract.isEmpty else { return "" }
+    return "[\(help.abstract.zshEscaped())]"
   }
   
   func zshCompletionString(_ commands: [ParsableCommand.Type]) -> String? {
-    guard help.help?.shouldDisplay != false else { return nil }
+    guard help.shouldDisplay else { return nil }
     
     var inputs: String
     switch update {

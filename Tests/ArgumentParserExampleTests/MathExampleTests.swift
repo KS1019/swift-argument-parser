@@ -66,6 +66,11 @@ final class MathExampleTests: XCTestCase {
     AssertExecuteCommand(command: "math add -h", expected: helpText)
     AssertExecuteCommand(command: "math add --help", expected: helpText)
     AssertExecuteCommand(command: "math help add", expected: helpText)
+    
+    // Verify that extra help flags are ignored.
+    AssertExecuteCommand(command: "math help add -h", expected: helpText)
+    AssertExecuteCommand(command: "math help add -help", expected: helpText)
+    AssertExecuteCommand(command: "math help add --help", expected: helpText)
   }
   
   func testMath_StatsMeanHelp() throws {
@@ -238,7 +243,7 @@ _math() {
     cur="${COMP_WORDS[COMP_CWORD]}"
     prev="${COMP_WORDS[COMP_CWORD-1]}"
     COMPREPLY=()
-    opts="add multiply stats help -h --help"
+    opts="--version -h --help add multiply stats help --dump-help"
     if [[ $COMP_CWORD == "1" ]]; then
         COMPREPLY=( $(compgen -W "$opts" -- "$cur") )
         return
@@ -264,7 +269,7 @@ _math() {
     COMPREPLY=( $(compgen -W "$opts" -- "$cur") )
 }
 _math_add() {
-    opts="--hex-output -x -h --help"
+    opts="--hex-output -x --version -h --help --dump-help"
     if [[ $COMP_CWORD == "$1" ]]; then
         COMPREPLY=( $(compgen -W "$opts" -- "$cur") )
         return
@@ -272,7 +277,7 @@ _math_add() {
     COMPREPLY=( $(compgen -W "$opts" -- "$cur") )
 }
 _math_multiply() {
-    opts="--hex-output -x -h --help"
+    opts="--hex-output -x --version -h --help --dump-help"
     if [[ $COMP_CWORD == "$1" ]]; then
         COMPREPLY=( $(compgen -W "$opts" -- "$cur") )
         return
@@ -280,7 +285,7 @@ _math_multiply() {
     COMPREPLY=( $(compgen -W "$opts" -- "$cur") )
 }
 _math_stats() {
-    opts="average stdev quantiles -h --help"
+    opts="--version -h --help average stdev quantiles --dump-help"
     if [[ $COMP_CWORD == "$1" ]]; then
         COMPREPLY=( $(compgen -W "$opts" -- "$cur") )
         return
@@ -302,7 +307,7 @@ _math_stats() {
     COMPREPLY=( $(compgen -W "$opts" -- "$cur") )
 }
 _math_stats_average() {
-    opts="--kind -h --help"
+    opts="--kind --version -h --help --dump-help"
     if [[ $COMP_CWORD == "$1" ]]; then
         COMPREPLY=( $(compgen -W "$opts" -- "$cur") )
         return
@@ -316,7 +321,7 @@ _math_stats_average() {
     COMPREPLY=( $(compgen -W "$opts" -- "$cur") )
 }
 _math_stats_stdev() {
-    opts="-h --help"
+    opts="--version -h --help --dump-help"
     if [[ $COMP_CWORD == "$1" ]]; then
         COMPREPLY=( $(compgen -W "$opts" -- "$cur") )
         return
@@ -324,9 +329,9 @@ _math_stats_stdev() {
     COMPREPLY=( $(compgen -W "$opts" -- "$cur") )
 }
 _math_stats_quantiles() {
-    opts="--file --directory --shell --custom -h --help"
+    opts="--file --directory --shell --custom --version -h --help --dump-help"
     opts="$opts alphabet alligator branch braggart"
-    opts="$opts $(math ---completion stats quantiles -- customArg "$COMP_WORDS")"
+    opts="$opts $("${COMP_WORDS[0]}" ---completion stats quantiles -- customArg "${COMP_WORDS[@]}")"
     if [[ $COMP_CWORD == "$1" ]]; then
         COMPREPLY=( $(compgen -W "$opts" -- "$cur") )
         return
@@ -345,14 +350,14 @@ _math_stats_quantiles() {
             return
         ;;
         --custom)
-            COMPREPLY=( $(compgen -W "$(math ---completion stats quantiles -- --custom "$COMP_WORDS")" -- "$cur") )
+            COMPREPLY=( $(compgen -W "$("${COMP_WORDS[0]}" ---completion stats quantiles -- --custom "${COMP_WORDS[@]}")" -- "$cur") )
             return
         ;;
     esac
     COMPREPLY=( $(compgen -W "$opts" -- "$cur") )
 }
 _math_help() {
-    opts="-h --help"
+    opts="--version --dump-help"
     if [[ $COMP_CWORD == "$1" ]]; then
         COMPREPLY=( $(compgen -W "$opts" -- "$cur") )
         return
@@ -374,7 +379,9 @@ _math() {
     integer ret=1
     local -a args
     args+=(
-        '(-h --help)'{-h,--help}'[Print help information.]'
+        '--version[Show the version.]'
+        '(-h --help)'{-h,--help}'[Show help information.]'
+        '(--dump-help)'{--dump-help}'[Dump help information.]'
         '(-): :->command'
         '(-)*:: :->arg'
     )
@@ -417,7 +424,9 @@ _math_add() {
     args+=(
         '(--hex-output -x)'{--hex-output,-x}'[Use hexadecimal notation for the result.]'
         ':values:'
-        '(-h --help)'{-h,--help}'[Print help information.]'
+        '--version[Show the version.]'
+        '(-h --help)'{-h,--help}'[Show help information.]'
+        '(--dump-help)'{--dump-help}'[Dump help information.]'
     )
     _arguments -w -s -S $args[@] && ret=0
 
@@ -430,7 +439,9 @@ _math_multiply() {
     args+=(
         '(--hex-output -x)'{--hex-output,-x}'[Use hexadecimal notation for the result.]'
         ':values:'
-        '(-h --help)'{-h,--help}'[Print help information.]'
+        '--version[Show the version.]'
+        '(-h --help)'{-h,--help}'[Show help information.]'
+        '(--dump-help)'{--dump-help}'[Dump help information.]'
     )
     _arguments -w -s -S $args[@] && ret=0
 
@@ -441,7 +452,9 @@ _math_stats() {
     integer ret=1
     local -a args
     args+=(
-        '(-h --help)'{-h,--help}'[Print help information.]'
+        '--version[Show the version.]'
+        '(-h --help)'{-h,--help}'[Show help information.]'
+        '(--dump-help)'{--dump-help}'[Dump help information.]'
         '(-): :->command'
         '(-)*:: :->arg'
     )
@@ -480,7 +493,9 @@ _math_stats_average() {
     args+=(
         '--kind[The kind of average to provide.]:kind:(mean median mode)'
         ':values:'
-        '(-h --help)'{-h,--help}'[Print help information.]'
+        '--version[Show the version.]'
+        '(-h --help)'{-h,--help}'[Show help information.]'
+        '(--dump-help)'{--dump-help}'[Dump help information.]'
     )
     _arguments -w -s -S $args[@] && ret=0
 
@@ -492,7 +507,9 @@ _math_stats_stdev() {
     local -a args
     args+=(
         ':values:'
-        '(-h --help)'{-h,--help}'[Print help information.]'
+        '--version[Show the version.]'
+        '(-h --help)'{-h,--help}'[Show help information.]'
+        '(--dump-help)'{--dump-help}'[Dump help information.]'
     )
     _arguments -w -s -S $args[@] && ret=0
 
@@ -510,7 +527,9 @@ _math_stats_quantiles() {
         '--directory:directory:_files -/'
         '--shell:shell:{local -a list; list=(${(f)"$(head -100 /usr/share/dict/words | tail -50)"}); _describe '''' list}'
         '--custom:custom:{_custom_completion $_math_commandname ---completion stats quantiles -- --custom $words}'
-        '(-h --help)'{-h,--help}'[Print help information.]'
+        '--version[Show the version.]'
+        '(-h --help)'{-h,--help}'[Show help information.]'
+        '(--dump-help)'{--dump-help}'[Dump help information.]'
     )
     _arguments -w -s -S $args[@] && ret=0
 
@@ -522,7 +541,8 @@ _math_help() {
     local -a args
     args+=(
         ':subcommands:'
-        '(-h --help)'{-h,--help}'[Print help information.]'
+        '--version[Show the version.]'
+        '(--dump-help)'{--dump-help}'[Dump help information.]'
     )
     _arguments -w -s -S $args[@] && ret=0
 
@@ -551,18 +571,26 @@ function __fish_math_using_command
     end
     return 1
 end
+complete -c math -n '__fish_math_using_command math' -f -l version -d 'Show the version.'
+complete -c math -n '__fish_math_using_command math' -f -s h -l help -d 'Show help information.'
 complete -c math -n '__fish_math_using_command math' -f -a 'add' -d 'Print the sum of the values.'
 complete -c math -n '__fish_math_using_command math' -f -a 'multiply' -d 'Print the product of the values.'
 complete -c math -n '__fish_math_using_command math' -f -a 'stats' -d 'Calculate descriptive statistics.'
 complete -c math -n '__fish_math_using_command math' -f -a 'help' -d 'Show subcommand help information.'
 complete -c math -n '__fish_math_using_command math add' -f -l hex-output -s x -d 'Use hexadecimal notation for the result.'
+complete -c math -n '__fish_math_using_command math add' -f -s h -l help -d 'Show help information.'
 complete -c math -n '__fish_math_using_command math multiply' -f -l hex-output -s x -d 'Use hexadecimal notation for the result.'
+complete -c math -n '__fish_math_using_command math multiply' -f -s h -l help -d 'Show help information.'
+complete -c math -n '__fish_math_using_command math stats' -f -s h -l help -d 'Show help information.'
 complete -c math -n '__fish_math_using_command math stats' -f -a 'average' -d 'Print the average of the values.'
 complete -c math -n '__fish_math_using_command math stats' -f -a 'stdev' -d 'Print the standard deviation of the values.'
 complete -c math -n '__fish_math_using_command math stats' -f -a 'quantiles' -d 'Print the quantiles of the values (TBD).'
 complete -c math -n '__fish_math_using_command math stats' -f -a 'help' -d 'Show subcommand help information.'
 complete -c math -n '__fish_math_using_command math stats average' -f -r -l kind -d 'The kind of average to provide.'
 complete -c math -n '__fish_math_using_command math stats average --kind' -f -k -a 'mean median mode'
+complete -c math -n '__fish_math_using_command math stats average' -f -l version -d 'Show the version.'
+complete -c math -n '__fish_math_using_command math stats average' -f -s h -l help -d 'Show help information.'
+complete -c math -n '__fish_math_using_command math stats stdev' -f -s h -l help -d 'Show help information.'
 complete -c math -n '__fish_math_using_command math stats quantiles' -f -r -l file
 complete -c math -n '__fish_math_using_command math stats quantiles --file' -f -a '(for i in *.{txt,md}; echo $i;end)'
 complete -c math -n '__fish_math_using_command math stats quantiles' -f -r -l directory
@@ -571,4 +599,5 @@ complete -c math -n '__fish_math_using_command math stats quantiles' -f -r -l sh
 complete -c math -n '__fish_math_using_command math stats quantiles --shell' -f -a '(head -100 /usr/share/dict/words | tail -50)'
 complete -c math -n '__fish_math_using_command math stats quantiles' -f -r -l custom
 complete -c math -n '__fish_math_using_command math stats quantiles --custom' -f -a '(command math ---completion stats quantiles -- --custom (commandline -opc)[1..-1])'
+complete -c math -n '__fish_math_using_command math stats quantiles' -f -s h -l help -d 'Show help information.'
 """

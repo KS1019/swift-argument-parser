@@ -140,6 +140,10 @@ extension ParsableArguments {
   public static func helpMessage(columns: Int? = nil) -> String {
     HelpGenerator(self).rendered(screenWidth: columns)
   }
+  
+  public static func dumpMessage(columns: Int? = nil) -> String {
+    DumpHelpInfoGenerator(self).rendered()
+  }
 
   /// Returns the exit code for the given error.
   ///
@@ -268,7 +272,7 @@ extension ArgumentSet {
             parser: { _ in nil },
             default: nilOrValue(child.value),
             completion: .default)
-          definition.help.help = .hidden
+          definition.help.updateArgumentHelp(help: .hidden)
           return ArgumentSet(definition)
         }
       }

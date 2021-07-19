@@ -61,7 +61,6 @@ extension CompletionScriptTests {
   func testBase_Bash() throws {
     let script1 = try CompletionsGenerator(command: Base.self, shell: .bash)
           .generateCompletionScript()
-
     XCTAssertEqual(bashBaseCompletions, script1)
     
     let script2 = try CompletionsGenerator(command: Base.self, shellName: "bash")
@@ -151,7 +150,8 @@ _base() {
         '--path1:path1:_files'
         '--path2:path2:_files'
         '--path3:path3:(a b c)'
-        '(-h --help)'{-h,--help}'[Print help information.]'
+        '(-h --help)'{-h,--help}'[Show help information.]'
+        '(--dump-help)'{--dump-help}'[Dump help information.]'
     )
     _arguments -w -s -S $args[@] && ret=0
 
@@ -174,7 +174,7 @@ _base() {
     cur="${COMP_WORDS[COMP_CWORD]}"
     prev="${COMP_WORDS[COMP_CWORD-1]}"
     COMPREPLY=()
-    opts="--name --kind --other-kind --path1 --path2 --path3 -h --help"
+    opts="--name --kind --other-kind --path1 --path2 --path3 -h --help --dump-help"
     if [[ $COMP_CWORD == "1" ]]; then
         COMPREPLY=( $(compgen -W "$opts" -- "$cur") )
         return
@@ -223,7 +223,8 @@ _escaped-command() {
     local -a args
     args+=(
         '--one[Escaped chars: '"'"'\\[\\]\\\\.]:one:'
-        '(-h --help)'{-h,--help}'[Print help information.]'
+        '(-h --help)'{-h,--help}'[Show help information.]'
+        '(--dump-help)'{--dump-help}'[Dump help information.]'
     )
     _arguments -w -s -S $args[@] && ret=0
 
@@ -263,4 +264,5 @@ complete -c base -n '__fish_base_using_command base' -f -r -l path2
 complete -c base -n '__fish_base_using_command base --path2' -f -a '(for i in *.{}; echo $i;end)'
 complete -c base -n '__fish_base_using_command base' -f -r -l path3
 complete -c base -n '__fish_base_using_command base --path3' -f -k -a 'a b c'
+complete -c base -n '__fish_base_using_command base' -f -s h -l help -d 'Show help information.'
 """
