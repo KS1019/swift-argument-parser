@@ -66,7 +66,7 @@ extension UsageGenerator {
   }
   
   var synopsisWithoutToolName: String {
-    let definitionSynopsis = definition.synopsis
+    let definitionSynopsis = definition.filter { $0.help.shouldDisplay }
     switch definitionSynopsis.count {
     case 0:
       return ""
@@ -84,7 +84,10 @@ extension UsageGenerator {
       }
       return "<options>"
     default:
-      return "\(definition.synopsis.joined(separator: " "))"
+      let synopsis = definitionSynopsis
+        .map { $0.synopsis }
+        .joined(separator: " ")
+      return "\(synopsis)"
     }
   }
 }
