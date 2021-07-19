@@ -544,3 +544,131 @@ extension HelpGenerationTests {
       """)
   }
 }
+
+extension HelpGenerationTests {
+  private struct SuperCommand: ParsableCommand {
+    static let configuration = CommandConfiguration(
+      commandName: "super",
+      subcommands: [Sub.self],
+      defaultSubcommand: Sub.self)
+    
+    struct Sub: ParsableCommand {
+      static let configuration = CommandConfiguration(
+        commandName: "sub",
+        subcommands: [SubSub.self],
+        defaultSubcommand: SubSub.self)
+      
+      @Argument(help: "Required argument")
+      var requiredArgumentSub: String
+      
+      @Argument(help: "Non-required argument")
+      var nonRequiredArgumentSub: String?
+      
+      struct SubSub: ParsableCommand {
+        static let configuration = CommandConfiguration(
+          commandName: "subsub")
+        
+        @Argument(help: "Required argument")
+        var requiredArgumentSubSub: String
+        
+        @Argument(help: "Non-required argument")
+        var nonRequiredArgumentSubSub: String?
+      }
+    }
+  }
+  
+  func testNestedCommands() {
+    AssertHelp(for: SuperCommand.self, equals: """
+      USAGE:
+        super <required-argument-sub> [<non-required-argument-sub>]
+        super <subcommand>
+
+      ARGUMENTS:
+        <required-argument-sub> Required argument
+        <non-required-argument-sub>
+                                Non-required argument
+
+      OPTIONS:
+        -h, --help              Show help information.
+
+      SUBCOMMANDS:
+        sub (default)
+        subsub (default)
+      
+        See 'super help <subcommand>' for detailed help.
+      """)
+    
+    AssertHelp(for: SuperCommand.Sub.self, root: SuperCommand.self, equals: """
+      USAGE:
+        super sub <required-argument-sub-sub> [<non-required-argument-sub-sub>]
+        super sub <required-argument-sub> [<non-required-argument-sub>] <subcommand>
+
+      ARGUMENTS:
+        <required-argument-sub-sub>
+                                Required argument
+        <non-required-argument-sub-sub>
+                                Non-required argument
+
+      OPTIONS:
+        -h, --help              Show help information.
+
+      SUBCOMMANDS:
+        subsub (default)
+      
+        See 'super help sub <subcommand>' for detailed help.
+      """)
+  }
+}
+
+extension HelpGenerationTests {
+  private struct Zinc: ParsableCommand {
+    static let configuration = CommandConfiguration(
+      commandName: "zinc",
+      abstract: "Zinc is a command-line tool for keeping local files in sync with files hosted outside of your folder or repository.",
+      subcommands: [Lint.self, Sync.self],
+      defaultSubcommand: Sync.self)
+    
+    struct Lint: ParsableCommand {
+      static let configuration = CommandConfiguration(
+        commandName: "lint",
+        abstract: "Performs basic linting against a Zincfile to identify issues and errors.")
+    }
+    
+    struct Sync: ParsableCommand {
+      static let configuration = CommandConfiguration(
+        commandName: "sync",
+        abstract: "Syncs local files with remote files as defined by a Zincfile.")
+      
+      @Option(name: [.short, .long], help: "The Zincfile to parse and use for syncing.")
+      var file: String = "Zincfile"
+      
+      @Flag(help: "Logs additional debug messages if enabled.")
+      var verbose: Bool = false
+    }
+  }
+  
+  func testZincCommand() {
+    AssertHelp(for: Zinc.self, equals: """
+      OVERVIEW: Zinc is a command-line tool for keeping local files in sync with
+      files hosted outside of your folder or repository.
+
+      USAGE:
+        zinc [--file <file>] [--verbose]
+        zinc <subcommand>
+      
+      OPTIONS:
+        -f, --file <file>       The Zincfile to parse and use for syncing. (default:
+                                Zincfile)
+        --verbose               Logs additional debug messages if enabled.
+        -h, --help              Show help information.
+      
+      SUBCOMMANDS:
+        lint                    Performs basic linting against a Zincfile to identify
+                                issues and errors.
+        sync (default)          Syncs local files with remote files as defined by a
+                                Zincfile.
+      
+        See 'zinc help <subcommand>' for detailed help.
+      """)
+  }
+}
