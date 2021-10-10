@@ -9,33 +9,63 @@
 //
 //===----------------------------------------------------------------------===//
 
-/// A wrapper that represents a command-line flag.
+/// A property wrapper that represents a command-line flag.
 ///
-/// A flag is a defaulted Boolean or integer value that can be changed by
-/// specifying the flag on the command line. For example:
+/// Use the `@Flag` wrapper to define a property of your custom type as a
+/// command-line flag. A *flag* is a dash-prefixed label that can be provided on
+/// the command line, such as `-d` and `--debug`.
 ///
-///     struct Options: ParsableArguments {
-///         @Flag var verbose: Bool
+/// For example, the following program declares a flag that lets a user indicate
+/// that seconds should be included when printing the time.
+///
+///     @main
+///     struct Time: ParsableCommand {
+///         @Flag var includeSeconds = false
+///
+///         mutating func run() {
+///             if includeSeconds {
+///                 print(Date.now.formatted(.dateTime.hour().minute().second()))
+///             } else {
+///                 print(Date.now.formatted(.dateTime.hour().minute()))
+///             }
+///         }
 ///     }
 ///
-/// `verbose` has a default value of `false`, but becomes `true` if `--verbose`
-/// is provided on the command line.
+/// `includeSeconds` has a default value of `false`, but becomes `true` if
+/// `--include-seconds` is provided on the command line.
+///
+///     $ time
+///     11:09 AM
+///     $ time --include-seconds
+///     11:09:15 AM
 ///
 /// A flag can have a value that is a `Bool`, an `Int`, or any `EnumerableFlag`
 /// type. When using an `EnumerableFlag` type as a flag, the individual cases
 /// form the flags that are used on the command line.
 ///
-///     struct Options {
+///     @main
+///     struct Math: ParsableCommand {
 ///         enum Operation: EnumerableFlag {
 ///             case add
 ///             case multiply
 ///         }
 ///
 ///         @Flag var operation: Operation
+///
+///         mutating func run() {
+///             print("Time to \(operation)!")
+///         }
 ///     }
 ///
-///     // usage: command --add
-///     //    or: command --multiply
+/// Instead of using the name of the `operation` property as the flag in this
+/// case, the two cases of the `Operation` enumeration become valid flags.
+/// The `operation` property is neither optional nor given a default value, so
+/// one of the two flags is required.
+///
+///     $ math --add
+///     Time to add!
+///     $ math
+///     Error: Missing one of: '--add', '--multiply'
 @propertyWrapper
 public struct Flag<Value>: Decodable, ParsedWrapper {
   internal var _parsedValue: Parsed<Value>
@@ -499,97 +529,6 @@ extension Flag {
       initial: nil,
       help: help
     )
-  }
-}
-
-// - MARK: Unavailable CaseIterable/RawValue == String
-
-extension Flag where Value: CaseIterable, Value: RawRepresentable, Value: Equatable, Value.RawValue == String {
-  /// Creates a property that gets its value from the presence of a flag,
-  /// where the allowed flags are defined by a case-iterable type.
-  ///
-  /// - Parameters:
-  ///   - name: A specification for what names are allowed for this flag.
-  ///   - initial: A default value to use for this property. If `initial` is
-  ///     `nil`, this flag is required.
-  ///   - exclusivity: The behavior to use when multiple flags are specified.
-  ///   - help: Information about how to use this flag.
-  @available(*, unavailable, message: "Add 'EnumerableFlag' conformance to your value type and, if needed, specify the 'name' of each case there.")
-  public init(
-    name: NameSpecification = .long,
-    default initial: Value? = nil,
-    exclusivity: FlagExclusivity = .exclusive,
-    help: ArgumentHelp? = nil
-  ) {
-    self.init(_parsedValue: .init { key in
-      // This gets flipped to `true` the first time one of these flags is
-      // encountered.
-      var hasUpdated = false
-      let defaultValue = initial.map(String.init(describing:))
-
-      let args = Value.allCases.map { value -> ArgumentDefinition in
-        let caseKey = InputKey(rawValue: value.rawValue)
-        let help = ArgumentDefinition.Help(options: initial != nil ? .isOptional : [], help: help, defaultValue: defaultValue, key: key, isComposite: true)
-        return ArgumentDefinition.flag(name: name, key: key, caseKey: caseKey, help: help, parsingStrategy: .default, initialValue: initial, update: .nullary({ (origin, name, values) in
-          hasUpdated = try ArgumentSet.updateFlag(key: key, value: value, origin: origin, values: &values, hasUpdated: hasUpdated, exclusivity: exclusivity)
-        }))
-      }
-      return ArgumentSet(args)
-      })
-  }
-}
-
-extension Flag {
-  /// Creates a property that gets its value from the presence of a flag,
-  /// where the allowed flags are defined by a case-iterable type.
-  @available(*, unavailable, message: "Add 'EnumerableFlag' conformance to your value type and, if needed, specify the 'name' of each case there.")
-  public init<Element>(
-    name: NameSpecification = .long,
-    exclusivity: FlagExclusivity = .exclusive,
-    help: ArgumentHelp? = nil
-  ) where Value == Element?, Element: CaseIterable, Element: Equatable, Element: RawRepresentable, Element.RawValue == String {
-    self.init(_parsedValue: .init { key in
-      // This gets flipped to `true` the first time one of these flags is
-      // encountered.
-      var hasUpdated = false
-      
-      let args = Element.allCases.map { value -> ArgumentDefinition in
-        let caseKey = InputKey(rawValue: value.rawValue)
-        let help = ArgumentDefinition.Help(options: .isOptional, help: help, key: key, isComposite: true)
-        return ArgumentDefinition.flag(name: name, key: key, caseKey: caseKey, help: help, parsingStrategy: .default, initialValue: nil as Element?, update: .nullary({ (origin, name, values) in
-          hasUpdated = try ArgumentSet.updateFlag(key: key, value: value, origin: origin, values: &values, hasUpdated: hasUpdated, exclusivity: exclusivity)
-        }))
-      }
-      return ArgumentSet(args)
-    })
-  }
-  
-  /// Creates an array property that gets its values from the presence of
-  /// zero or more flags, where the allowed flags are defined by a
-  /// `CaseIterable` type.
-  ///
-  /// This property has an empty array as its default value.
-  ///
-  /// - Parameters:
-  ///   - name: A specification for what names are allowed for this flag.
-  ///   - help: Information about how to use this flag.
-  @available(*, unavailable, message: "Add 'EnumerableFlag' conformance to your value type and, if needed, specify the 'name' of each case there.")
-  public init<Element>(
-    name: NameSpecification = .long,
-    help: ArgumentHelp? = nil
-  ) where Value == Array<Element>, Element: CaseIterable, Element: RawRepresentable, Element.RawValue == String {
-    self.init(_parsedValue: .init { key in
-      let args = Element.allCases.map { value -> ArgumentDefinition in
-        let caseKey = InputKey(rawValue: value.rawValue)
-        let help = ArgumentDefinition.Help(options: .isOptional, help: help, key: key, isComposite: true)
-        return ArgumentDefinition.flag(name: name, key: key, caseKey: caseKey, help: help, parsingStrategy: .default, initialValue: [Element](), update: .nullary({ (origin, name, values) in
-          values.update(forKey: key, inputOrigin: origin, initial: [Element](), closure: {
-            $0.append(value)
-          })
-        }))
-      }
-      return ArgumentSet(args)
-    })
   }
 }
 

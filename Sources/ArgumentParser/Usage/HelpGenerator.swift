@@ -309,7 +309,7 @@ internal extension BidirectionalCollection where Element == ParsableCommand.Type
     getHelpNames().preferredName
   }
   
-  func versionArgumentDefintion() -> ArgumentDefinition? {
+  func versionArgumentDefinition() -> ArgumentDefinition? {
     guard contains(where: { !$0.configuration.version.isEmpty })
       else { return nil }
     return ArgumentDefinition(
@@ -333,7 +333,7 @@ internal extension BidirectionalCollection where Element == ParsableCommand.Type
   
   func dumpHelpArgumentDefinition() -> ArgumentDefinition {
     return ArgumentDefinition(
-      kind: .named([.long("dump-help")]),
+      kind: .named([.long("experimental-dump-help")]),
       help: .init(
         help: ArgumentHelp("Dump help information as JSON."),
         key: InputKey(rawValue: "")),
@@ -347,7 +347,7 @@ internal extension BidirectionalCollection where Element == ParsableCommand.Type
   func argumentsForHelp() -> ArgumentSet {
     guard var arguments = self.last.map({ ArgumentSet($0, creatingHelp: true) })
       else { return ArgumentSet() }
-    self.versionArgumentDefintion().map { arguments.append($0) }
+    self.versionArgumentDefinition().map { arguments.append($0) }
     self.helpArgumentDefinition().map { arguments.append($0) }
     
     // To add when 'dump-help' is public API:
