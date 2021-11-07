@@ -106,7 +106,7 @@ extension ArgumentSet {
   }
   
   /// Creates an argument set for a pair of inverted Boolean flags.
-  static func flag(key: InputKey, name: NameSpecification, default initialValue: Bool?, inversion: FlagInversion, exclusivity: FlagExclusivity, help: ArgumentHelp?) -> ArgumentSet {
+    static func flag(key: InputKey, name: NameSpecification, default initialValue: Bool?, inversion: FlagInversion, exclusivity: FlagExclusivity, isInteractable: Bool = false, help: ArgumentHelp?) -> ArgumentSet {
     // The flag is required if initialValue is `nil`, otherwise it's optional
     let helpOptions: ArgumentDefinition.Help.Options = initialValue != nil ? .isOptional : []
     
@@ -116,14 +116,14 @@ extension ArgumentSet {
     let (enableNames, disableNames) = inversion.enableDisableNamePair(for: key, name: name)
 
     var hasUpdated = false
-    let enableArg = ArgumentDefinition(kind: .named(enableNames), help: enableHelp, completion: .default, update: .nullary({ (origin, name, values) in
+        let enableArg = ArgumentDefinition(kind: .named(enableNames), help: enableHelp, completion: .default, parsingStrategy: isInteractable ? .interactive : .default, update: .nullary({ (origin, name, values) in
         hasUpdated = try ArgumentSet.updateFlag(key: key, value: true, origin: origin, values: &values, hasUpdated: hasUpdated, exclusivity: exclusivity)
     }), initial: { origin, values in
       if let initialValue = initialValue {
         values.set(initialValue, forKey: key, inputOrigin: origin)
       }
     })
-    let disableArg = ArgumentDefinition(kind: .named(disableNames), help: disableHelp, completion: .default, update: .nullary({ (origin, name, values) in
+    let disableArg = ArgumentDefinition(kind: .named(disableNames), help: disableHelp, completion: .default, parsingStrategy: isInteractable ? .interactive : .default, update: .nullary({ (origin, name, values) in
         hasUpdated = try ArgumentSet.updateFlag(key: key, value: false, origin: origin, values: &values, hasUpdated: hasUpdated, exclusivity: exclusivity)
     }), initial: { _, _ in })
     return ArgumentSet([enableArg, disableArg])
@@ -333,6 +333,9 @@ extension ArgumentSet {
           try update(origins, parsed.name, value, &result)
           usedOrigins.formUnion(origins)
         }
+        
+      case .interactive:
+        fatalError("Interactive Not Implemented")
       }
     }
     

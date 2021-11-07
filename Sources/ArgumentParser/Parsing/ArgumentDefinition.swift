@@ -97,6 +97,8 @@ struct ArgumentDefinition {
     case upToNextOption
     /// Parse all remaining `SplitArguments.Element` as values, regardless of its type.
     case allRemainingInput
+      
+    case interactive
   }
   
   var kind: Kind

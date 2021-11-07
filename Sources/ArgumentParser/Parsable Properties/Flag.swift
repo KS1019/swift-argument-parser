@@ -206,10 +206,11 @@ extension Flag where Value == Optional<Bool> {
     name: NameSpecification = .long,
     inversion: FlagInversion,
     exclusivity: FlagExclusivity = .chooseLast,
+    isInteractable: Bool = false,
     help: ArgumentHelp? = nil
   ) {
     self.init(_parsedValue: .init { key in
-      .flag(key: key, name: name, default: nil, inversion: inversion, exclusivity: exclusivity, help: help)
+            .flag(key: key, name: name, default: nil, inversion: inversion, exclusivity: exclusivity, isInteractable: isInteractable, help: help)
     })
   }
 }
