@@ -105,7 +105,8 @@ extension Argument where Value: ExpressibleByArgument {
   private init(
     initial: Value?,
     help: ArgumentHelp?,
-    completion: CompletionKind?
+    completion: CompletionKind?,
+    isInteractable: Bool
   ) {
     self.init(_parsedValue: .init { key in
       ArgumentSet(key: key, kind: .positional, parseType: Value.self, name: NameSpecification.long, default: initial, help: help, completion: completion ?? Value.defaultCompletionKind)
@@ -125,12 +126,14 @@ extension Argument where Value: ExpressibleByArgument {
   public init(
     wrappedValue: Value,
     help: ArgumentHelp? = nil,
-    completion: CompletionKind? = nil
+    completion: CompletionKind? = nil,
+    isInteractable: Bool = false
   ) {
     self.init(
       initial: wrappedValue,
       help: help,
-      completion: completion
+      completion: completion,
+      isInteractable: isInteractable
     )
   }
 
@@ -145,12 +148,14 @@ extension Argument where Value: ExpressibleByArgument {
   ///   - help: Information about how to use this argument.
   public init(
     help: ArgumentHelp? = nil,
-    completion: CompletionKind? = nil
+    completion: CompletionKind? = nil,
+    isInteractable: Bool = false
   ) {
     self.init(
       initial: nil,
       help: help,
-      completion: completion
+      completion: completion,
+      isInteractable: isInteractable
     )
   }
 }
@@ -219,7 +224,8 @@ extension Argument {
   /// - Parameter help: Information about how to use this argument.
   public init<T: ExpressibleByArgument>(
     help: ArgumentHelp? = nil,
-    completion: CompletionKind? = nil
+    completion: CompletionKind? = nil,
+    isInteractable: Bool = false
   ) where Value == T? {
     self.init(_parsedValue: .init { key in
       var arg = ArgumentDefinition(
@@ -228,7 +234,8 @@ extension Argument {
         parsingStrategy: .default,
         parser: T.init(argument:),
         default: nil,
-        completion: completion ?? T.defaultCompletionKind)
+        completion: completion ?? T.defaultCompletionKind,
+        isInteractable: isInteractable)
       arg.help.updateArgumentHelp(help: help)
       return ArgumentSet(arg.optional)
     })
@@ -241,6 +248,7 @@ extension Argument {
     initial: Value?,
     help: ArgumentHelp?,
     completion: CompletionKind?,
+    isInteractable: Bool = false,
     transform: @escaping (String) throws -> Value
   ) {
     self.init(_parsedValue: .init { key in
@@ -257,7 +265,8 @@ extension Argument {
         if let v = initial {
           values.set(v, forKey: key, inputOrigin: origin)
         }
-      })
+      },
+      isInteractable: isInteractable)
       return ArgumentSet(arg)
     })
   }
@@ -278,12 +287,14 @@ extension Argument {
     wrappedValue: Value,
     help: ArgumentHelp? = nil,
     completion: CompletionKind? = nil,
+    isInteractable: Bool = false,
     transform: @escaping (String) throws -> Value
   ) {
     self.init(
       initial: wrappedValue,
       help: help,
       completion: completion,
+      isInteractable: isInteractable,
       transform: transform
     )
   }
@@ -302,12 +313,14 @@ extension Argument {
   public init(
     help: ArgumentHelp? = nil,
     completion: CompletionKind? = nil,
+    isInteractable: Bool = false,
     transform: @escaping (String) throws -> Value
   ) {
     self.init(
       initial: nil,
       help: help,
       completion: completion,
+      isInteractable: isInteractable,
       transform: transform
     )
   }
@@ -320,7 +333,8 @@ extension Argument {
     initial: Value?,
     parsingStrategy: ArgumentArrayParsingStrategy,
     help: ArgumentHelp?,
-    completion: CompletionKind?
+    completion: CompletionKind?,
+    isInteractable: Bool = false
   )
     where Element: ExpressibleByArgument, Value == Array<Element>
   {
@@ -345,7 +359,9 @@ extension Argument {
         completion: completion ?? Element.defaultCompletionKind,
         parsingStrategy: parsingStrategy.base,
         update: .appendToArray(forType: Element.self, key: key),
-        initial: setInitialValue)
+        initial: setInitialValue,
+        isInteractable: isInteractable
+      )
       arg.help.defaultValue = helpDefaultValue
       return ArgumentSet(arg)
     })
@@ -362,7 +378,8 @@ extension Argument {
     wrappedValue: Value,
     parsing parsingStrategy: ArgumentArrayParsingStrategy = .remaining,
     help: ArgumentHelp? = nil,
-    completion: CompletionKind? = nil
+    completion: CompletionKind? = nil,
+    isInteractable: Bool = false
   )
     where Element: ExpressibleByArgument, Value == Array<Element>
   {
@@ -370,7 +387,8 @@ extension Argument {
       initial: wrappedValue,
       parsingStrategy: parsingStrategy,
       help: help,
-      completion: completion
+      completion: completion,
+      isInteractable: isInteractable
     )
   }
 
@@ -388,15 +406,15 @@ extension Argument {
   public init<Element>(
     parsing parsingStrategy: ArgumentArrayParsingStrategy = .remaining,
     help: ArgumentHelp? = nil,
-    completion: CompletionKind? = nil
+    completion: CompletionKind? = nil,
+    isInteractable: Bool = false
   )
     where Element: ExpressibleByArgument, Value == Array<Element>
   {
     self.init(
       initial: nil,
       parsingStrategy: parsingStrategy,
-      help: help,
-      completion: completion
+      help: help, completion: completion, isInteractable: isInteractable
     )
   }
 
@@ -408,6 +426,7 @@ extension Argument {
     parsingStrategy: ArgumentArrayParsingStrategy,
     help: ArgumentHelp?,
     completion: CompletionKind?,
+    isInteractable: Bool = false,
     transform: @escaping (String) throws -> Element
   )
     where Value == Array<Element>
@@ -443,7 +462,8 @@ extension Argument {
               throw ParserError.unableToParseValue(origin, name, valueString, forKey: key, originalError: error)
           }
         }),
-        initial: setInitialValue)
+        initial: setInitialValue,
+        isInteractable: isInteractable)
       arg.help.defaultValue = helpDefaultValue
       return ArgumentSet(arg)
     })
@@ -462,6 +482,7 @@ extension Argument {
   public init<Element>(
     wrappedValue: Value,
     parsing parsingStrategy: ArgumentArrayParsingStrategy = .remaining,
+    isInteractable: Bool = false,
     help: ArgumentHelp? = nil,
     completion: CompletionKind? = nil,
     transform: @escaping (String) throws -> Element
@@ -473,6 +494,7 @@ extension Argument {
       parsingStrategy: parsingStrategy,
       help: help,
       completion: completion,
+      isInteractable: isInteractable,
       transform: transform
     )
   }
@@ -493,6 +515,7 @@ extension Argument {
     parsing parsingStrategy: ArgumentArrayParsingStrategy = .remaining,
     help: ArgumentHelp? = nil,
     completion: CompletionKind? = nil,
+    isInteractable: Bool = false,
     transform: @escaping (String) throws -> Element
   )
     where Value == Array<Element>
@@ -502,6 +525,7 @@ extension Argument {
       parsingStrategy: parsingStrategy,
       help: help,
       completion: completion,
+      isInteractable: isInteractable,
       transform: transform
     )
   }

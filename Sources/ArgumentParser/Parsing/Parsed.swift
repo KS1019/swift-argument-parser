@@ -46,6 +46,8 @@ extension ParsedWrapper {
     guard let d = _decoder as? SingleValueDecoder else {
       throw ParserError.invalidState
     }
+      
+    // TODO: KS1019 - Do something around here to prompt interactive argument
     guard let value = d.parsedElement?.value as? Value else {
       throw ParserError.noValue(forKey: d.parsedElement?.key ?? d.key)
     }

@@ -158,8 +158,8 @@ extension ArgumentSet {
 
 extension ArgumentDefinition {
   /// Create a unary / argument that parses using the given closure.
-  init<A>(key: InputKey, kind: ArgumentDefinition.Kind, parsingStrategy: ParsingStrategy = .default, parser: @escaping (String) -> A?, parseType type: A.Type = A.self, default initial: A?, completion: CompletionKind) {
-    self.init(key: key, kind: kind, parsingStrategy: parsingStrategy, parser: parser, parseType: type, default: initial, completion: completion, help: ArgumentDefinition.Help(key: key))
+    init<A>(key: InputKey, kind: ArgumentDefinition.Kind, parsingStrategy: ParsingStrategy = .default, parser: @escaping (String) -> A?, parseType type: A.Type = A.self, default initial: A?, completion: CompletionKind, isInteractable: Bool = false) {
+        self.init(key: key, kind: kind, parsingStrategy: parsingStrategy, parser: parser, parseType: type, default: initial, completion: completion, help: ArgumentDefinition.Help(key: key), isInteractable: isInteractable)
   }
 
   /// Create a unary / argument that parses using the given closure.
@@ -167,7 +167,7 @@ extension ArgumentDefinition {
     self.init(key: key, kind: kind, parsingStrategy: parsingStrategy, parser: parser, parseType: type, default: initial, completion: completion, help: ArgumentDefinition.Help(type: A.self, key: key))
   }
 
-  private init<A>(key: InputKey, kind: ArgumentDefinition.Kind, parsingStrategy: ParsingStrategy = .default, parser: @escaping (String) -> A?, parseType type: A.Type = A.self, default initial: A?, completion: CompletionKind, help: ArgumentDefinition.Help) {
+  private init<A>(key: InputKey, kind: ArgumentDefinition.Kind, parsingStrategy: ParsingStrategy = .default, parser: @escaping (String) -> A?, parseType type: A.Type = A.self, default initial: A?, completion: CompletionKind, help: ArgumentDefinition.Help, isInteractable: Bool = false) {
     self.init(kind: kind, help: help, completion: completion, parsingStrategy: parsingStrategy, update: .unary({ (origin, name, value, values) in
       guard let v = parser(value) else {
         throw ParserError.unableToParseValue(origin, name, value, forKey: key)
@@ -180,7 +180,8 @@ extension ArgumentDefinition {
       case .named, .positional:
         values.set(initial, forKey: key, inputOrigin: origin)
       }
-    })
+    },
+    isInteractable: isInteractable)
 
     self.help.options.formUnion(ArgumentDefinition.Help.Options(type: type))
     self.help.defaultValue = initial.map { "\($0)" }
@@ -384,6 +385,7 @@ extension ArgumentSet {
           continue
         }
         
+        // TODO: KS1019 - Or do something here to put new arg into result
         switch argument.update {
         case let .nullary(update):
           // We don’t expect a value for this option.

@@ -105,6 +105,7 @@ struct ArgumentDefinition {
   var parsingStrategy: ParsingStrategy
   var update: Update
   var initial: Initial
+  var isInteractable: Bool
   
   var names: [Name] {
     switch kind {
@@ -127,7 +128,8 @@ struct ArgumentDefinition {
     completion: CompletionKind,
     parsingStrategy: ParsingStrategy = .default,
     update: Update,
-    initial: @escaping Initial = { _, _ in }
+    initial: @escaping Initial = { _, _ in },
+    isInteractable: Bool = false
   ) {
     if case (.positional, .nullary) = (kind, update) {
       preconditionFailure("Can't create a nullary positional argument.")
@@ -139,6 +141,7 @@ struct ArgumentDefinition {
     self.parsingStrategy = parsingStrategy
     self.update = update
     self.initial = initial
+    self.isInteractable = isInteractable
   }
 }
 
