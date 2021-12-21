@@ -484,7 +484,7 @@ extension ArgumentSet {
         preconditionFailure("Shouldn't see a nullary positional argument.")
       }
       let allowOptionsAsInput = argumentDefinition.parsingStrategy == .allRemainingInput
-      
+      // KS1019: do something with `argumentDefinition.isInteractive`
       repeat {
         guard let origin = next(unconditional: allowOptionsAsInput) else {
           break ArgumentLoop

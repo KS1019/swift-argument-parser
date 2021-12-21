@@ -53,7 +53,7 @@ extension ParsedWrapper {
     // TODO: KS1019 - Do something around here to prompt interactive argument
     // Kinda got this to work but I cannot access to isInteractable
     guard let value = d.parsedElement?.value as? Value else {
-      if !String(describing: d.parsedElement).contains("generateCompletionScript") {
+      if !String(describing: d.parsedElement).contains("generateCompletionScript") && isInteractable {
         print("Enter \((d.parsedElement?.key ?? d.key).rawValue): ", terminator: "")
         var input = readLine()
         let parsed: Parsed = .value(input as! Self.Value)
