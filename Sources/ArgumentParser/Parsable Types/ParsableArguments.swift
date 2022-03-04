@@ -270,7 +270,15 @@ extension ArgumentSet {
                               ? codingKey.dropFirst(1)
                               : codingKey.dropFirst(0))
           let key = InputKey(rawValue: codingKey)
+          if !String(describing: d.parsedElement).contains("generateCompletionScript") && isInteractable {
+                print("Enter \(codingKey): ", terminator: "")
+                var input = readLine()
+                let parsed: Parsed =
+              return parsed.argumentSet(for: key)
+            }
           return parsed.argumentSet(for: key)
+        } else if let parsed = .value(input as! Self.Value) {
+            
         } else {
           // Save a non-wrapped property as is
           var definition = ArgumentDefinition(
