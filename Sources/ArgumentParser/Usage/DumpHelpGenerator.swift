@@ -38,7 +38,7 @@ fileprivate extension BidirectionalCollection where Element == ParsableCommand.T
   /// Returns the ArgumentSet for the last command in this stack, including
   /// help and version flags, when appropriate.
   func allArguments() -> ArgumentSet {
-    guard var arguments = self.last.map({ ArgumentSet($0, creatingHelp: false) })
+    guard var arguments = self.last.map({ ArgumentSet($0, visibility: .private) })
     else { return ArgumentSet() }
     self.versionArgumentDefinition().map { arguments.append($0) }
     self.helpArgumentDefinition().map { arguments.append($0) }
@@ -107,7 +107,7 @@ fileprivate extension CommandInfoV0 {
     let arguments = commandStack
       .allArguments()
       .mergingCompositeArguments()
-      .map(ArgumentInfoV0.init)
+      .compactMap(ArgumentInfoV0.init)
 
     self = CommandInfoV0(
       superCommands: superCommands,
@@ -121,10 +121,11 @@ fileprivate extension CommandInfoV0 {
 }
 
 fileprivate extension ArgumentInfoV0 {
-  init(argument: ArgumentDefinition) {
+  init?(argument: ArgumentDefinition) {
+    guard let kind = ArgumentInfoV0.KindV0(argument: argument) else { return nil }
     self.init(
-      kind: ArgumentInfoV0.KindV0(argument: argument),
-      shouldDisplay: argument.help.shouldDisplay,
+      kind: kind,
+      shouldDisplay: argument.help.visibility.base == .default,
       isOptional: argument.help.options.contains(.isOptional),
       isRepeating: argument.help.options.contains(.isRepeating),
       names: argument.names.map(ArgumentInfoV0.NameInfoV0.init),
@@ -138,7 +139,7 @@ fileprivate extension ArgumentInfoV0 {
 }
 
 fileprivate extension ArgumentInfoV0.KindV0 {
-  init(argument: ArgumentDefinition) {
+  init?(argument: ArgumentDefinition) {
     switch argument.kind {
     case .named:
       switch argument.update {
@@ -150,7 +151,7 @@ fileprivate extension ArgumentInfoV0.KindV0 {
     case .positional:
       self = .positional
     case .default:
-      preconditionFailure("argument.kind must not be .default")
+      return nil
     }
   }
 }

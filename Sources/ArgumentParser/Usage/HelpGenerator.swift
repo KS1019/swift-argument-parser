@@ -12,21 +12,8 @@
 internal struct HelpGenerator {
   static var helpIndent = 2
   static var labelColumnWidth = 26
-  static var systemScreenWidth: Int {
-    _screenWidthOverride ?? _terminalSize().width
-  }
-  
-  internal static var _screenWidthOverride: Int? = nil
-  
-  struct Usage {
-    var components: [String]
-    
-    func rendered(screenWidth: Int) -> String {
-      components
-        .joined(separator: "\n")
-    }
-  }
-  
+  static var systemScreenWidth: Int { _terminalSize().width }
+
   struct Section {
     struct Element: Hashable {
       var label: String
@@ -98,16 +85,16 @@ internal struct HelpGenerator {
   
   var commandStack: [ParsableCommand.Type]
   var abstract: String
-  var usage: Usage
+  var usage: String
   var sections: [Section]
   var discussionSections: [DiscussionSection]
   
-  init(commandStack: [ParsableCommand.Type]) {
+  init(commandStack: [ParsableCommand.Type], visibility: ArgumentVisibility) {
     guard let currentCommand = commandStack.last else {
       fatalError()
     }
     
-    let currentArgSet = ArgumentSet(currentCommand)
+    let currentArgSet = ArgumentSet(currentCommand, visibility: visibility)
     self.commandStack = commandStack
 
     // Build the tool name and subcommand name from the command configuration
@@ -116,10 +103,16 @@ internal struct HelpGenerator {
       toolName = "\(superName) \(toolName)"
     }
 
-    var usageString = UsageGenerator(toolName: toolName, definition: [currentArgSet]).synopsis
-    if !currentCommand.configuration.subcommands.isEmpty {
-      if usageString.last != " " { usageString += " " }
-      usageString += "<subcommand>"
+    if let usage = currentCommand.configuration.usage {
+      self.usage = usage
+    } else {
+      var usage = UsageGenerator(toolName: toolName, definition: [currentArgSet])
+        .synopsis
+      if !currentCommand.configuration.subcommands.isEmpty {
+        if usage.last != " " { usage += " " }
+        usage += "<subcommand>"
+      }
+      self.usage = usage
     }
     
     self.abstract = currentCommand.configuration.abstract
@@ -129,17 +122,16 @@ internal struct HelpGenerator {
       }
       self.abstract += "\n\(currentCommand.configuration.discussion)"
     }
-    
-    self.usage = Usage(components: [usageString])
-    self.sections = HelpGenerator.generateSections(commandStack: commandStack)
+
+    self.sections = HelpGenerator.generateSections(commandStack: commandStack, visibility: visibility)
     self.discussionSections = []
   }
   
-  init(_ type: ParsableArguments.Type) {
-    self.init(commandStack: [type.asCommand])
+  init(_ type: ParsableArguments.Type, visibility: ArgumentVisibility) {
+    self.init(commandStack: [type.asCommand], visibility: visibility)
   }
 
-  static func generateSections(commandStack: [ParsableCommand.Type]) -> [Section] {
+  private static func generateSections(commandStack: [ParsableCommand.Type], visibility: ArgumentVisibility) -> [Section] {
     guard !commandStack.isEmpty else { return [] }
     
     var positionalElements: [Section.Element] = []
@@ -147,10 +139,9 @@ internal struct HelpGenerator {
 
     /// Start with a full slice of the ArgumentSet so we can peel off one or
     /// more elements at a time.
-    var args = commandStack.argumentsForHelp()[...]
-    
+    var args = commandStack.argumentsForHelp(visibility: visibility)[...]
     while let arg = args.popFirst() {
-      guard arg.help.shouldDisplay else { continue }
+      assert(arg.help.visibility.isAtLeastAsVisible(as: visibility))
       
       let synopsis: String
       let description: String
@@ -164,7 +155,6 @@ internal struct HelpGenerator {
 
         synopsis = groupedArgs
           .lazy
-          .filter { $0.help.shouldDisplay }
           .map { $0.synopsisForHelp }
           .joined(separator: "/")
 
@@ -182,9 +172,7 @@ internal struct HelpGenerator {
           .filter { !$0.isEmpty }
           .joined(separator: " ")
       } else {
-        synopsis = arg.help.shouldDisplay
-          ? arg.synopsisForHelp
-          : ""
+        synopsis = arg.synopsisForHelp
 
         let defaultValue = arg.help.defaultValue.flatMap { $0.isEmpty ? nil : "(default: \($0))" }
         description = [arg.help.abstract, defaultValue]
@@ -222,9 +210,9 @@ internal struct HelpGenerator {
     ]
   }
   
-  func usageMessage(screenWidth: Int? = nil) -> String {
-    let screenWidth = screenWidth ?? HelpGenerator.systemScreenWidth
-    return "Usage: \(usage.rendered(screenWidth: screenWidth))"
+  func usageMessage() -> String {
+    guard !usage.isEmpty else { return "" }
+    return "Usage: \(usage.hangingIndentingEachLine(by: 7))"
   }
   
   var includesSubcommands: Bool {
@@ -243,7 +231,7 @@ internal struct HelpGenerator {
       ? ""
       : "OVERVIEW: \(abstract)".wrapped(to: screenWidth) + "\n\n"
     
-    var helpSubcommandMessage: String = ""
+    var helpSubcommandMessage = ""
     if includesSubcommands {
       var names = commandStack.map { $0._commandName }
       if let superName = commandStack.first!.configuration._superCommandName {
@@ -257,10 +245,13 @@ internal struct HelpGenerator {
         """
     }
     
+    let renderedUsage = usage.isEmpty
+      ? ""
+      : "USAGE: \(usage.hangingIndentingEachLine(by: 7))\n\n"
+    
     return """
     \(renderedAbstract)\
-    USAGE: \(usage.rendered(screenWidth: screenWidth))
-    
+    \(renderedUsage)\
     \(renderedSections)\(helpSubcommandMessage)
     """
   }
@@ -271,20 +262,44 @@ fileprivate extension CommandConfiguration {
 }
 
 fileprivate extension NameSpecification {
-  func generateHelpNames() -> [Name] {
-    return self.makeNames(InputKey(rawValue: "help")).sorted(by: >)
+  /// Generates a list of `Name`s for the help command at any visibility level.
+  ///
+  /// If the `default` visibility is used, the help names are returned
+  /// unmodified. If a non-default visibility is used the short names are
+  /// removed and the long names (both single and double dash) are appended with
+  /// the name of the visibility level. After the optional name modification
+  /// step, the name are returned in descending order.
+  func generateHelpNames(visibility: ArgumentVisibility) -> [Name] {
+    self
+      .makeNames(InputKey(rawValue: "help"))
+      .compactMap { name in
+        guard visibility.base != .default else { return name }
+        switch name {
+        case .long(let helpName):
+          return .long("\(helpName)-\(visibility.base)")
+        case .longWithSingleDash(let helpName):
+          return .longWithSingleDash("\(helpName)-\(visibility)")
+        case .short:
+          // Cannot create a non-default help flag from a short name.
+          return nil
+        }
+      }
+      .sorted(by: >)
   }
 }
 
 internal extension BidirectionalCollection where Element == ParsableCommand.Type {
-  func getHelpNames() -> [Name] {
-    return self.last(where: { $0.configuration.helpNames != nil })
-      .map { $0.configuration.helpNames!.generateHelpNames() }
-      ?? CommandConfiguration.defaultHelpNames.generateHelpNames()
+  /// Returns a list of help names at the request visibility level for the top
+  /// most ParsableCommand in the command stack with custom helpNames. If the
+  /// command stack contains no custom help names the default help names.
+  func getHelpNames(visibility: ArgumentVisibility) -> [Name] {
+    self.last(where: { $0.configuration.helpNames != nil })
+      .map { $0.configuration.helpNames!.generateHelpNames(visibility: visibility) }
+      ?? CommandConfiguration.defaultHelpNames.generateHelpNames(visibility: visibility)
   }
-  
+
   func getPrimaryHelpName() -> Name? {
-    getHelpNames().preferredName
+    getHelpNames(visibility: .default).preferredName
   }
   
   func versionArgumentDefinition() -> ArgumentDefinition? {
@@ -299,7 +314,7 @@ internal extension BidirectionalCollection where Element == ParsableCommand.Type
   }
   
   func helpArgumentDefinition() -> ArgumentDefinition? {
-    let names = getHelpNames()
+    let names = getHelpNames(visibility: .default)
     guard !names.isEmpty else { return nil }
     return ArgumentDefinition(
       kind: .named(names),
@@ -322,8 +337,8 @@ internal extension BidirectionalCollection where Element == ParsableCommand.Type
   
   /// Returns the ArgumentSet for the last command in this stack, including
   /// help and version flags, when appropriate.
-  func argumentsForHelp() -> ArgumentSet {
-    guard var arguments = self.last.map({ ArgumentSet($0, creatingHelp: true) })
+  func argumentsForHelp(visibility: ArgumentVisibility) -> ArgumentSet {
+    guard var arguments = self.last.map({ ArgumentSet($0, visibility: visibility) })
       else { return ArgumentSet() }
     self.versionArgumentDefinition().map { arguments.append($0) }
     self.helpArgumentDefinition().map { arguments.append($0) }
@@ -348,10 +363,14 @@ import WinSDK
 #endif
 
 func _terminalSize() -> (width: Int, height: Int) {
-#if os(Windows)
+#if os(WASI)
+  // WASI doesn't yet support terminal size
+  return (80, 25)
+#elseif os(Windows)
   var csbi: CONSOLE_SCREEN_BUFFER_INFO = CONSOLE_SCREEN_BUFFER_INFO()
-
-  GetConsoleScreenBufferInfo(GetStdHandle(STD_OUTPUT_HANDLE), &csbi)
+  guard GetConsoleScreenBufferInfo(GetStdHandle(STD_OUTPUT_HANDLE), &csbi) else {
+    return (80, 25)
+  }
   return (width: Int(csbi.srWindow.Right - csbi.srWindow.Left) + 1,
           height: Int(csbi.srWindow.Bottom - csbi.srWindow.Top) + 1)
 #else
