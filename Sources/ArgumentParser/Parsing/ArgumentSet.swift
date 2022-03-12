@@ -106,9 +106,16 @@ extension ArgumentSet {
   }
   
   /// Creates an argument set for a pair of inverted Boolean flags.
-  static func flag(key: InputKey, name: NameSpecification, default initialValue: Bool?, inversion: FlagInversion, exclusivity: FlagExclusivity, help: ArgumentHelp?) -> ArgumentSet {
-    // The flag is required if initialValue is `nil`, otherwise it's optional
-    let helpOptions: ArgumentDefinition.Help.Options = initialValue != nil ? .isOptional : []
+  static func flag(
+    key: InputKey,
+    name: NameSpecification,
+    default initialValue: Bool?,
+    required: Bool,
+    inversion: FlagInversion,
+    exclusivity: FlagExclusivity,
+    help: ArgumentHelp?) -> ArgumentSet
+  {
+    let helpOptions: ArgumentDefinition.Help.Options = required ? [] : .isOptional
     
     let enableHelp = ArgumentDefinition.Help(options: helpOptions, help: help, defaultValue: initialValue.map(String.init), key: key, isComposite: true)
     let disableHelp = ArgumentDefinition.Help(options: [.isOptional], help: help, key: key)
@@ -188,6 +195,23 @@ extension ArgumentDefinition {
     if initial != nil {
       self = self.optional
     }
+  }
+}
+
+extension ArgumentDefinition {
+  /// Creates an argument definition for a property that isn't parsed from the
+  /// command line.
+  ///
+  /// This initializer is used for any property defined on a `ParsableArguments`
+  /// type that isn't decorated with one of ArgumentParser's property wrappers.
+  init(unparsedKey: String, default defaultValue: Any?) {
+    self.init(
+      key: InputKey(rawValue: unparsedKey),
+      kind: .default,
+      parser: { _ in nil },
+      default: defaultValue,
+      completion: .default)
+    help.updateArgumentHelp(help: .private)
   }
 }
 
