@@ -19,7 +19,7 @@ struct Repeat: ParsableCommand {
     @Flag(help: "Include a counter with each repetition.")
     var includeCounter = false
 
-    @Argument(help: "The phrase to repeat.")
+    @Argument(help: "The phrase to repeat.", isInteractable: true)
     var phrase: String
 
     mutating func run() throws {

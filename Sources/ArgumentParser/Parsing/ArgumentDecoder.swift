@@ -123,6 +123,27 @@ final class ParsedArgumentsContainer<K>: KeyedDecodingContainerProtocol where K 
     } catch let error as ParserError {
       if case .noValue = error {
         return nil
+//      if case .noValue(let k) = error {
+////        let args = //arguments(for: k).filter { $0.isInteractable }
+////        guard !args.isEmpty else { return nil }
+////          args.forEach { arg in
+////              print("Enter \(arg.name): ", terminator: "")
+////              var input = readLine()
+////              let parsed: Parsed = .value(input as! Self.Value)
+////              if let parsedElement = parsedElement, parsedElement.inputOrigin.isDefaultValue {
+////                  return parsedElement.value as? T
+////              }
+////          }
+//          if !String(describing: element(forKey: k)).contains("generateCompletionScript") && element(forKey: k)?.value {
+//                  print("Enter \(k.rawValue): ", terminator: "")
+//                  var input = readLine()
+////                  let parsed: Parsed = .value(input as! Self.Value)
+////                  self.init(_parsedValue: parsed)
+////                  return
+//                 return input as? T
+//                } else {
+//                    return nil
+//                }
       } else {
         throw error
       }
@@ -191,13 +212,22 @@ struct SingleValueDecoder: Decoder {
     }
     
     func decode<T>(_ type: T.Type) throws -> T where T : Decodable {
-      guard let e = parsedElement else {
-        throw ParserError.noValue(forKey: InputKey(rawValue: codingPath.last!.stringValue))
-      }
-      guard let s = e.value as? T else {
-        throw InternalParseError.wrongType(e.value, forKey: e.key)
-      }
-      return s
+        if let e = parsedElement {
+            guard let s = e.value as? T else {
+                throw InternalParseError.wrongType(e.value, forKey: e.key)
+            }
+            return s
+        } else {
+            
+            guard let e = parsedElement else {
+                throw ParserError.noValue(forKey: InputKey(rawValue: codingPath.last!.stringValue))
+            }
+            guard let s = e.value as? T else {
+                throw InternalParseError.wrongType(e.value, forKey: e.key)
+            }
+            
+            return s
+        }
     }
   }
   
