@@ -155,7 +155,7 @@ extension ArgumentSet {
 
 extension ArgumentSet {
   /// Create a unary / argument that parses the string as `A`.
-    init<A: ExpressibleByArgument>(key: InputKey, kind: ArgumentDefinition.Kind, parsingStrategy: ArgumentDefinition.ParsingStrategy = .default, parseType type: A.Type, name: NameSpecification, default initial: A?, help: ArgumentHelp?, completion: CompletionKind, isInteractable: Bool = false) {
+  init<A: ExpressibleByArgument>(key: InputKey, kind: ArgumentDefinition.Kind, parsingStrategy: ArgumentDefinition.ParsingStrategy = .default, parseType type: A.Type, name: NameSpecification, default initial: A?, help: ArgumentHelp?, completion: CompletionKind, isInteractable: Bool = false) {
     var arg = ArgumentDefinition(key: key, kind: kind, parsingStrategy: parsingStrategy, parser: A.init(argument:), default: initial, completion: completion, isInteractable: isInteractable)
     arg.help.updateArgumentHelp(help: help)
     arg.help.defaultValue = initial.map { "\($0.defaultValueDescription)" }
@@ -165,16 +165,16 @@ extension ArgumentSet {
 
 extension ArgumentDefinition {
   /// Create a unary / argument that parses using the given closure.
-    init<A>(key: InputKey, kind: ArgumentDefinition.Kind, parsingStrategy: ParsingStrategy = .default, parser: @escaping (String) -> A?, parseType type: A.Type = A.self, default initial: A?, completion: CompletionKind, isInteractable: Bool = false) {
-        self.init(key: key, kind: kind, parsingStrategy: parsingStrategy, parser: parser, parseType: type, default: initial, completion: completion, help: ArgumentDefinition.Help(key: key), isInteractable: isInteractable)
+  init<A>(key: InputKey, kind: ArgumentDefinition.Kind, parsingStrategy: ParsingStrategy = .default, parser: @escaping (String) -> A?, parseType type: A.Type = A.self, default initial: A?, completion: CompletionKind, isInteractable: Bool = false) {
+    self.init(key: key, kind: kind, parsingStrategy: parsingStrategy, parser: parser, parseType: type, default: initial, completion: completion, help: ArgumentDefinition.Help(key: key), isInteractable: isInteractable)
   }
 
   /// Create a unary / argument that parses using the given closure.
-    init<A: ExpressibleByArgument>(key: InputKey, kind: ArgumentDefinition.Kind, parsingStrategy: ParsingStrategy = .default, parser: @escaping (String) -> A?, parseType type: A.Type = A.self, default initial: A?, completion: CompletionKind, isInteractable: Bool = false) {
-      self.init(key: key, kind: kind, parsingStrategy: parsingStrategy, parser: parser, parseType: type, default: initial, completion: completion, help: ArgumentDefinition.Help(type: A.self, key: key), isInteractable: isInteractable)
+  init<A: ExpressibleByArgument>(key: InputKey, kind: ArgumentDefinition.Kind, parsingStrategy: ParsingStrategy = .default, parser: @escaping (String) -> A?, parseType type: A.Type = A.self, default initial: A?, completion: CompletionKind, isInteractable: Bool = false) {
+    self.init(key: key, kind: kind, parsingStrategy: parsingStrategy, parser: parser, parseType: type, default: initial, completion: completion, help: ArgumentDefinition.Help(type: A.self, key: key), isInteractable: isInteractable)
   }
 
-    private init<A>(key: InputKey, kind: ArgumentDefinition.Kind, parsingStrategy: ParsingStrategy = .default, parser: @escaping (String) -> A?, parseType type: A.Type = A.self, default initial: A?, completion: CompletionKind, help: ArgumentDefinition.Help, isInteractable: Bool = false) {
+  private init<A>(key: InputKey, kind: ArgumentDefinition.Kind, parsingStrategy: ParsingStrategy = .default, parser: @escaping (String) -> A?, parseType type: A.Type = A.self, default initial: A?, completion: CompletionKind, help: ArgumentDefinition.Help, isInteractable: Bool = false) {
     self.init(kind: kind, help: help, completion: completion, parsingStrategy: parsingStrategy, update: .unary({ (origin, name, value, values) in
       guard let v = parser(value) else {
         throw ParserError.unableToParseValue(origin, name, value, forKey: key)

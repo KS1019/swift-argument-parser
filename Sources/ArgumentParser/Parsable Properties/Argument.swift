@@ -109,7 +109,7 @@ extension Argument where Value: ExpressibleByArgument {
     isInteractable: Bool = false
   ) {
     self.init(_parsedValue: .init { key in
-        ArgumentSet(key: key, kind: .positional, parseType: Value.self, name: NameSpecification.long, default: initial, help: help, completion: completion ?? Value.defaultCompletionKind, isInteractable: isInteractable)
+      ArgumentSet(key: key, kind: .positional, parseType: Value.self, name: NameSpecification.long, default: initial, help: help, completion: completion ?? Value.defaultCompletionKind, isInteractable: isInteractable)
       })
   }
 
