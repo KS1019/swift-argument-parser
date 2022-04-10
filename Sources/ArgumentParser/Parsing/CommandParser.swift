@@ -250,18 +250,19 @@ extension CommandParser {
       return .failure(error)
     } catch let error as ParserError {
       // KS1019
-    　// We will probably need to know the kind of argument to properly deal with different types of arguments
+      // We will probably need to know the kind of argument to properly deal with different types of arguments
       guard case .noValue(let k) = error else {
           let error = arguments.isEmpty ? ParserError.noArguments(error) : error
           return .failure(CommandError(commandStack: commandStack, parserError: error))
       }
       let currentArgSet = ArgumentSet(commandStack.last!, visibility: .default)
-            .first { $0.isInteractable && !arguments.contains($0.valueName) }!
-    
-        print("Enter \(currentArgSet.valueName) (\(currentArgSet.help.abstract)): ", terminator: "")
-        var i = readLine()!
-        
-        return parse(arguments: arguments + [i])
+            .filter { $0.isInteractable && !arguments.contains($0.valueName) }
+       
+      let interactiveArgs: [String] = currentArgSet.map { arg in
+        print("Enter \(arg.valueName) (\(arg.help.abstract)): ", terminator: "")
+        return readLine()!
+      }
+      return parse(arguments: arguments + interactiveArgs)
     } catch let helpRequest as HelpRequested {
       return .success(HelpCommand(
         commandStack: commandStack,

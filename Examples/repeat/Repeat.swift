@@ -22,6 +22,9 @@ struct Repeat: ParsableCommand {
     @Argument(help: "The phrase to repeat.", isInteractable: true)
     var phrase: String
 
+    @Argument(help: "Ending phrase", isInteractable: true)
+    var ending: String
+
     mutating func run() throws {
         let repeatCount = count ?? 2
 
@@ -32,5 +35,7 @@ struct Repeat: ParsableCommand {
                 print(phrase)
             }
         }
+
+        print(ending)
     }
 }
